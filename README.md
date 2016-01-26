@@ -1,9 +1,12 @@
 # deformation_graph
-I wrote a deformation graph code for Embedded deformation.
+I wrote a deformation graph code for Embedded deformation. The deformation graph is like the following:
+  
+  https://github.com/hwdong/deformation_graph/blob/master/geo_sample.jpg
+
 The deformation graph is generated using farthest point sampling algorithm and 
 the code is based on the fast marching code from Professor Gabriel Peyre to compute
 geodesic distance. If you need the complete deformation graph code,please contact me 
-through email from a university email such as yyy@xxx.edu
+through email from a university email such as yyy@xxx.edu.
 
 
 Reference
