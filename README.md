@@ -6,7 +6,7 @@ I wrote a deformation graph code for Embedded deformation. The deformation graph
 The deformation graph is generated using farthest point sampling algorithm and 
 the code is based on the fast marching code from Professor Gabriel Peyre to compute
 geodesic distance. If you need the complete deformation graph code,please contact me 
-through email from a university email such as youremail@youruniversity.edu.
+through email from an university email such as youremail@youruniversity.edu.
 
 
 Reference
