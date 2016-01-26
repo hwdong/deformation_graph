@@ -1,11 +1,12 @@
 # deformation_graph
 I wrote a deformation graph code for Embedded deformation.
-The deformation graph is generated uding farthest point sampling algorithm and 
-the code is based on the fast marching code from Professor Javier V. Gómez. to compute
-geodesic distance.
+The deformation graph is generated using farthest point sampling algorithm and 
+the code is based on the fast marching code from Professor Gabriel Peyre to compute
+geodesic distance. If you need the complete deformation graph code,please contact me 
+through email from a university email such as yyy@xxx.edu
 
 
-1. https://gitlab.com/jvgomez1/fastmarching
-2. Embedded Deformation for Shape Manipulation. 
+Reference
+1. Embedded Deformation for Shape Manipulation. 
     https://graphics.ethz.ch/~sumnerb/research/embdef/Sumner2007EDF.pdf
-3. Geodesic Computations on 3D Meshes.http://www.cmap.polytechnique.fr/~peyre/geodesic_computations/
+2. Geodesic Computations on 3D Meshes.http://www.cmap.polytechnique.fr/~peyre/geodesic_computations/
