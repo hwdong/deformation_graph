@@ -7,6 +7,8 @@ through email from a university email such as yyy@xxx.edu
 
 
 Reference
+
 1. Embedded Deformation for Shape Manipulation. 
     https://graphics.ethz.ch/~sumnerb/research/embdef/Sumner2007EDF.pdf
+    
 2. Geodesic Computations on 3D Meshes.http://www.cmap.polytechnique.fr/~peyre/geodesic_computations/
