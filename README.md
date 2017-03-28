@@ -1,4 +1,4 @@
-# deformation_graph
+# Deformation graph
 This is my deformation graph code for the implementation of Embedded deformation. The deformation graph will look like the following picture:
 
 ![alt tag](https://github.com/hwdong/deformation_graph/blob/master/geo_sample.jpg) 
