@@ -1,15 +1,6 @@
-//refer to integrable_bin
+#include "buildConnectivity.h"
+#include <iostream>
 
-#include <igl/readOFF.h>
-#include <igl/readOBJ.h>
-#include <igl/local_basis.h>
-#include <igl/avg_edge_length.h>
-#include <igl/is_border_vertex.h>
-#include <igl/adjacency_list.h>
-#include <igl/vertex_triangle_adjacency.h>
-#include <igl/triangle_triangle_adjacency.h>
-#include <igl/edge_topology.h>
-#include <igl/jet.h>
 #include <Eigen/Geometry>
 #include <cassert>
 #include "fast_marching.h"
@@ -29,26 +20,12 @@ using namespace std;
 #define FM_ASSERT(expr)   // if(!(expr)) cerr << "Error in file " << __FILE__ << " line " << __LINE__ << "." << endl 
 #endif // FM_DEBUG
 
-/*
-// Input mesh
-Eigen::MatrixXd V;
-Eigen::MatrixXi F;
-std::vector<bool> V_border;
-std::vector<std::vector<int> > VF, VFi;
-std::vector<std::vector<int> > VV;
-Eigen::MatrixXi TT, TTi;
-Eigen::MatrixXi E, E2F, F2E;
-*/
 
 bool FastMarchingData::BuildConnectivity(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F)
 {
 	if (V.rows() == 0 || F.rows() == 0) return false;
-	//V_border = igl::is_border_vertex(V, F);
-	igl::adjacency_list(F, VV);
-	igl::vertex_triangle_adjacency(V, F, VF, VFi);
-//	igl::triangle_triangle_adjacency (V, F, TT, TTi);
-	igl::triangle_triangle_adjacency(F, TT, TTi);
-	// igl::edge_topology(V, F, E, F2E, E2F);
+
+	buildConnectivity(F, VV,VF, TT, TTi);
 	
 	return true;
 }
