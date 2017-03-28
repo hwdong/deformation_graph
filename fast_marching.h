@@ -1,13 +1,17 @@
-
 #ifndef DHW_FAST_MARCHING_H
 #define DHW_FAST_MARCHING_H
+
+#include "igl/igl_inline.h"
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <vector>
 #include <memory>
 using namespace std;
+namespace igl
+{
 
+}
 typedef double FM_Float;
 const FM_Float FM_INFINITE = 1e15;
 
@@ -45,15 +49,15 @@ public:
 	struct FrontOverlapInfo {
 		vector<Front_Distance> fronts;
 	};
-	std::shared_ptr<FrontOverlapInfo> overlaoInfo;
+	std::shared_ptr<FrontOverlapInfo> overlapInfo;
 
 	void reset() {
-		front = -1; distance = FM_INFINITE; state = kFar; stopped = false; overlaoInfo.reset();	}
+		front = -1; distance = FM_INFINITE; state = kFar; stopped = false; overlapInfo.reset();	}
 };
 
 typedef FastMarchingVertex::FastMarchingVertexState VertexState;
 
-typedef std::vector<FastMarchingVertex*> VertexPtrVector;
+typedef std::vector<class FastMarchingVertex*> VertexPtrVector;
 
 
 
@@ -64,7 +68,7 @@ struct FastMarchingData {
 	Eigen::MatrixXi TT, TTi;
 	
 	//Fast Matching data
-	std::vector<FastMarchingVertex> vertices;
+	std::vector<struct FastMarchingVertex> vertices;
 
 	/*
 	// mesh V,F
@@ -85,8 +89,8 @@ struct FastMarchingData {
 	bool PerformFastMarching(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
 		const vector<int> &start_points);
 	bool PrepareFastMarching(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F);
-	int FarthestPointSamplingStep(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F);
-	bool FarthestPointSampling(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
+	std::pair<int, FM_Float> FarthestPointSamplingStep(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F);
+	std::pair<int, FM_Float> FarthestPointSampling(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
 		const vector<int> &start_points,int num = 0);
 	
 private:
@@ -101,102 +105,8 @@ private:
 	bool toStop(FastMarchingVertex* pVert);
 };
 
-template <typename Index, typename IndexVector>
-void vertex_vertex_adjacency(const Eigen::PlainObjectBase<Index>  & F,
-	std::vector<std::vector<IndexVector> >& VV){
-	VV.clear();
-	VV.resize(F.maxCoeff() + 1);
-
-	// Loop over faces
-	for (int i = 0; i<F.rows(); i++){
-		// Loop over this face
-		for (int j = 0; j<F.cols(); j++){
-			// Get indices of edge: s --> d
-			int s = F(i, j);
-			int d = F(i, (j + 1) % F.cols());
-			VV.at(s).push_back(d);
-			VV.at(d).push_back(s);
-		}
-	}
-	// Remove duplicates
-	for (int i = 0; i<(int)VV.size(); ++i){
-		std::sort(VV[i].begin(), VV[i].end());
-		VV[i].erase(std::unique(VV[i].begin(), VV[i].end()), VV[i].end());
-	}
-	
-}
-
-template <typename DerivedF, typename VFType>
-void vertex_triangle_adjacency(	
-	const Eigen::PlainObjectBase<DerivedF>& F,
-	std::vector<std::vector<VFType> >& VF)
-{
-	int n = F.maxCoeff() + 1;
-	VF.clear();	VF.resize(n);
-
-	typedef typename DerivedF::Index Index;
-	for (Index fi = 0; fi<F.rows(); ++fi)	{
-		for (Index i = 0; i < F.cols(); ++i) {
-			VF[F(fi, i)].push_back(fi);			
-		}
-	}
-}
-
-// Compute triangle-triangle adjacency with indices
-template <typename DerivedF, typename DerivedTT, typename DerivedTTi>
-void triangle_triangle_adjacency(
-	const Eigen::PlainObjectBase<DerivedF>& F,
-	Eigen::PlainObjectBase<DerivedTT>& TT,
-	Eigen::PlainObjectBase<DerivedTTi>& TTi)
-{
-	std::vector<std::vector<int> > TTT;
-//	triangle_triangle_adjacency_preprocess(F, TTT);
-	for (int f = 0; f<F.rows(); ++f)
-		for (int i = 0; i<F.cols(); ++i)
-		{
-			// v1 v2 f ei
-			int v1 = F(f, i);
-			int v2 = F(f, (i + 1) % F.cols());
-			if (v1 > v2) std::swap(v1, v2);
-			std::vector<int> r(4);
-			r[0] = v1; r[1] = v2;
-			r[2] = f;  r[3] = i;
-			TTT.push_back(r);
-		}
-	std::sort(TTT.begin(), TTT.end());
-
-//	triangle_triangle_adjacency_extractTT(F, TTT, TT);
-	TT.setConstant((int)(F.rows()), F.cols(), -1);
-
-	for (int i = 1; i<(int)TTT.size(); ++i)
-	{
-		std::vector<int>& r1 = TTT[i - 1];
-		std::vector<int>& r2 = TTT[i];
-		if ((r1[0] == r2[0]) && (r1[1] == r2[1]))
-		{
-			TT(r1[2], r1[3]) = r2[2];
-			TT(r2[2], r2[3]) = r1[2];
-		}
-	}
-
-//	triangle_triangle_adjacency_extractTTi(F, TTT, TTi);
-	TTi.setConstant((int)(F.rows()), F.cols(), -1);
-	for (int i = 1; i<(int)TTT.size(); ++i)
-	{
-		std::vector<int>& r1 = TTT[i - 1];
-		std::vector<int>& r2 = TTT[i];
-		if ((r1[0] == r2[0]) && (r1[1] == r2[1]))
-		{
-			TTi(r1[2], r1[3]) = r2[3];
-			TTi(r2[2], r2[3]) = r1[3];
-		}
-	}
-}
-
 #ifndef IGL_STATIC_LIBRARY
 //#include "fast_marching.cpp"
 #endif
-
-
 
 #endif

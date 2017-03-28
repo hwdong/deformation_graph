@@ -1,4 +1,4 @@
-/*
+//refer to integrable_bin
 
 #include <igl/readOFF.h>
 #include <igl/readOBJ.h>
@@ -10,7 +10,6 @@
 #include <igl/triangle_triangle_adjacency.h>
 #include <igl/edge_topology.h>
 #include <igl/jet.h>
-*/
 #include <Eigen/Geometry>
 #include <cassert>
 #include "fast_marching.h"
@@ -30,16 +29,25 @@ using namespace std;
 #define FM_ASSERT(expr)   // if(!(expr)) cerr << "Error in file " << __FILE__ << " line " << __LINE__ << "." << endl 
 #endif // FM_DEBUG
 
-
-
+/*
+// Input mesh
+Eigen::MatrixXd V;
+Eigen::MatrixXi F;
+std::vector<bool> V_border;
+std::vector<std::vector<int> > VF, VFi;
+std::vector<std::vector<int> > VV;
+Eigen::MatrixXi TT, TTi;
+Eigen::MatrixXi E, E2F, F2E;
+*/
 
 bool FastMarchingData::BuildConnectivity(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F)
 {
 	if (V.rows() == 0 || F.rows() == 0) return false;
 	//V_border = igl::is_border_vertex(V, F);
-	vertex_vertex_adjacency(F, VV);
-	vertex_triangle_adjacency(F, VF);
-	triangle_triangle_adjacency(F, TT, TTi);
+	igl::adjacency_list(F, VV);
+	igl::vertex_triangle_adjacency(V, F, VF, VFi);
+//	igl::triangle_triangle_adjacency (V, F, TT, TTi);
+	igl::triangle_triangle_adjacency(F, TT, TTi);
 	// igl::edge_topology(V, F, E, F2E, E2F);
 	
 	return true;
@@ -351,7 +359,8 @@ FastMarchingVertex * UnfoldTriangle(const Eigen::MatrixXd &V, const Eigen::Matri
 }
 
 double ComputeVertexDistance(
-	const Eigen::MatrixXd &V, const Eigen::MatrixXi &Faces, const Eigen::MatrixXi &TT, const  Eigen::MatrixXi &TTi,
+	const Eigen::MatrixXd &V, const Eigen::MatrixXi &Faces,
+	const Eigen::MatrixXi &TT, const  Eigen::MatrixXi &TTi,
 	std::vector<struct FastMarchingVertex> &vertices,
 	int &cur_f,
 	FastMarchingVertex& CurrentVertex,
@@ -454,35 +463,34 @@ double ComputeVertexDistance(
 
 	return FM_INFINITE;
 }
-
-
-
-	bool FastMarchingData::frontOverlap(FastMarchingVertex* pNewVert, int new_front, FM_Float new_distance) {
-		typedef  FastMarchingVertex::FrontOverlapInfo FrontOverlapInfo;
-		if (pNewVert->front != new_front) return false;
-		if (!pNewVert->overlaoInfo) {
-			pNewVert->overlaoInfo.reset(new FrontOverlapInfo());
-			pNewVert->overlaoInfo->fronts.push_back(
+	bool FastMarchingData::frontOverlap(FastMarchingVertex* pNewVert, 
+		int new_front, FM_Float new_distance)
+	{		
+		if (pNewVert->front == new_front) return false;		
+		typedef  FastMarchingVertex::FrontOverlapInfo FrontOverlapInfo;		
+		if (!pNewVert->overlapInfo) {
+			pNewVert->overlapInfo.reset(new FrontOverlapInfo());
+			pNewVert->overlapInfo->fronts.push_back(
 				FastMarchingVertex::Front_Distance(pNewVert->front, pNewVert->distance));
-			pNewVert->overlaoInfo->fronts.push_back(
+			pNewVert->overlapInfo->fronts.push_back(
 				FastMarchingVertex::Front_Distance(new_front, new_distance));
-		}	
+		}
 		else {
 			int i = 0;
-			for (; i<pNewVert->overlaoInfo->fronts.size();i++) {
-				if (pNewVert->overlaoInfo->fronts[i].i == new_front&&pNewVert->overlaoInfo->fronts[i].value>new_distance)
-					pNewVert->overlaoInfo->fronts[i].value = new_distance;
-				if(i== pNewVert->overlaoInfo->fronts.size())
-					pNewVert->overlaoInfo->fronts.push_back(
-						FastMarchingVertex::Front_Distance(new_front, new_distance));
+			for (; i<pNewVert->overlapInfo->fronts.size(); i++) {
+				if (pNewVert->overlapInfo->fronts[i].i == new_front&&pNewVert->overlapInfo->fronts[i].value>new_distance)
+					pNewVert->overlapInfo->fronts[i].value = new_distance;				
 			}
-		}	
+			if (i == pNewVert->overlapInfo->fronts.size())
+				pNewVert->overlapInfo->fronts.push_back(
+					FastMarchingVertex::Front_Distance(new_front, new_distance));
+		}
 		return true;
-        
 	}
+
 	bool FastMarchingData::toStop(FastMarchingVertex* pVert) {
 		if (pVert->distance > option.distmax) return true;
-		for (int k = 0; k<option._end_points.size(); ++k)
+		for (int k = 0; k < option._end_points.size(); ++k)
 			if (option._end_points[k] == pVert->vid)
 				return true;
 		return false;
@@ -506,14 +514,9 @@ bool FastMarchingData::PrepareFastMarching(const Eigen::MatrixXd &V, const Eigen
 	return true;
 }
 
-bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
-	const vector<int> &start_points
-/*	std::vector<struct FastMarchingVertex> &vertices,
-//	vector<double> &distance,	// distance
-//	vector<double> &state,	// state
-//	vector<double> &nearest_neighbor,	// nearest neighbor ,double* D,
-	const FastMarchingOption& option = FastMarchingOption()*/
-	)
+bool FastMarchingData::PerformFastMarching(
+	const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
+	const vector<int> &start_points	)
 {
 	nbr_iter = 0;
 	for (int i = 0; i < V.rows(); i++) {
@@ -530,15 +533,18 @@ bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen
 
 		seed_points.push_back(i);
 	}
+
 	std::make_heap(active_Vertices.begin(), active_Vertices.end(),
-		[](FastMarchingVertex* vetex1, FastMarchingVertex* vetex2)->bool {return vetex1->distance > vetex2->distance; });
+		[](FastMarchingVertex* vetex1, FastMarchingVertex* vetex2)->bool 
+	           {	return vetex1->distance > vetex2->distance; });
 
 	int iter = 0;
 	while (!active_Vertices.empty() && iter < option.iter_max) {
 		FastMarchingVertex* pCurVert = active_Vertices.front();
 		assert(pCurVert != 0);
 		std::pop_heap(active_Vertices.begin(), active_Vertices.end(),
-			[](FastMarchingVertex* vetex1, FastMarchingVertex* vetex2)->bool { return vetex1->distance > vetex2->distance; });
+			[](FastMarchingVertex* vetex1, FastMarchingVertex* vetex2)->bool { 
+			return vetex1->distance > vetex2->distance; });
 		active_Vertices.pop_back();
 		pCurVert->state = VertexState::kDead;
 
@@ -549,8 +555,9 @@ bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen
 		// update front
 		for (int i : VV[pCurVert->vid]) {
 			FastMarchingVertex* pNewVert = &(vertices[i]);
-			if (pCurVert->stopped&&!pNewVert->stopped&&pNewVert->state == VertexState::kFar)continue;
-	//		pNewVert = &(vertices[9053]);
+			if (pCurVert->stopped&&!pNewVert->stopped&&pNewVert->state == VertexState::kFar)
+				continue;
+	
 			/* compute it's new distance using neighborhood information */
 			double new_distance = FM_INFINITE;
 			int j, k;
@@ -568,11 +575,12 @@ bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen
 				}
 				double w = 1.;
 				if (option.weight != 0) w = option.weight[i];
+				if(pVert1->distance<new_distance)
 				new_distance = std::min<double>(new_distance,
-					ComputeVertexDistance(V, F,TT, TTi, vertices, f, *pNewVert, *pVert1, *pVert2, pCurVert->front, w));
+					ComputeVertexDistance(V, F, TT, TTi, vertices, f, *pNewVert, *pVert1, *pVert2, pCurVert->front, w));
 				//ComputeVertexDistance(*pFace, *pNewVert, *pVert1, *pVert2, *pCurVert->GetFront()));
 			}
-			
+
 
 			switch (pNewVert->state) {
 			case VertexState::kFar:
@@ -593,10 +601,10 @@ bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen
 				}
 				break;
 			case VertexState::kAlive:
-				/* just update it's value */
+				// just update it's value 
 				if (new_distance <= pNewVert->distance)
 				{
-					/* possible overlap with old value */
+					// possible overlap with old value 
 			//		if (pCurVert->front != pNewVert->front)->GetFrontOverlapInfo().RecordOverlap(*pNewVert->GetFront(), pNewVert->GetDistance());
 					frontOverlap(pNewVert, pCurVert->front, new_distance);
 					pNewVert->distance = new_distance;
@@ -607,7 +615,7 @@ bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen
 				}
 				else
 				{
-					/* possible overlap with new value */
+					// possible overlap with new value 
 				//	if (pCurVert->front != pNewVert->front)pNewVert->GetFrontOverlapInfo().RecordOverlap(*pCurVert->GetFront(), rNewDistance);
 					frontOverlap(pNewVert, pCurVert->front, new_distance);
 				}
@@ -626,8 +634,10 @@ bool FastMarchingData::PerformFastMarching(const Eigen::MatrixXd &V, const Eigen
 	return false;	
 }
 
-int FastMarchingData::FarthestPointSamplingStep(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F) {
-
+std::pair<int, FM_Float> FastMarchingData::FarthestPointSamplingStep(
+	const Eigen::MatrixXd &V,
+	const Eigen::MatrixXi &F) 
+{
 	if (!option.bound)option.bound = new double[V.rows()];
 
 	FM_Float mad_dist = 0; int max_ind = 0;
@@ -639,18 +649,21 @@ int FastMarchingData::FarthestPointSamplingStep(const Eigen::MatrixXd &V, const 
 		}
 	}
 	vector<int> startPoints; startPoints.push_back(max_ind);
-	PerformFastMarching(V, F, startPoints);	
+	PerformFastMarching(V, F, startPoints);
+	std::cout << "max dist:=" << mad_dist << "\n";
 
-	return max_ind;
+	return std::make_pair(max_ind, mad_dist); 
 }
 
-bool FastMarchingData::FarthestPointSampling(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
+std::pair<int, FM_Float> FastMarchingData::FarthestPointSampling(
+	const Eigen::MatrixXd &V, const Eigen::MatrixXi &F,
 	const vector<int> &start_points, int num) {
 	PerformFastMarching(V, F, start_points);
 	
+	std::pair<int, FM_Float> p;
 	for (int i = 0; i < num; i++){
-		FarthestPointSamplingStep(V, F);
+		p  = FarthestPointSamplingStep(V, F);
 	}
-	return true;
+	return p;
 }
 
