@@ -1,17 +1,12 @@
 #ifndef DHW_FAST_MARCHING_H
 #define DHW_FAST_MARCHING_H
 
-#include "igl/igl_inline.h"
-
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <vector>
 #include <memory>
 using namespace std;
-namespace igl
-{
 
-}
 typedef double FM_Float;
 const FM_Float FM_INFINITE = 1e15;
 
@@ -105,8 +100,5 @@ private:
 	bool toStop(FastMarchingVertex* pVert);
 };
 
-#ifndef IGL_STATIC_LIBRARY
-//#include "fast_marching.cpp"
-#endif
 
 #endif

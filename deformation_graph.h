@@ -29,14 +29,7 @@ struct DeformationGraph {
 	double global_g[3];
 
 	double node_radious;
-#if 0
-	int gen_DeformationGraph(FastMarchingData &fmdata, const Eigen::MatrixXd &V,
-		const Eigen::MatrixXi &F,  const double radious_coef,
-		const int node_nodes_num=4, const int v_nodes_num = 6);
-	int gen_DeformationGraph(FastMarchingData &fmdata, const Eigen::MatrixXd &V, 
-		const Eigen::MatrixXi &F,const int num = 100,const double radious_coef=2.1, 
-		const int node_nodes_num = 4, const int v_nodes_num = 6);
-#endif
+
 	bool save_DeformationGraph(const std::string filename);
 	bool read_DeformationGraph(const std::string filename);
 };
