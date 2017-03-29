@@ -6,7 +6,7 @@
 #include <iostream>
 #include <random>
 
-int gen_DeformationGraph(DeformationGraph &dg,
+double gen_DeformationGraph(DeformationGraph &dg,
 	FastMarchingData &fmdata, const Eigen::MatrixXd &V,
 	const Eigen::MatrixXi &F, const double radious_coef,
 	const int node_nodes_num = 4, const int v_nodes_num = 6) 
@@ -23,7 +23,7 @@ int gen_DeformationGraph(DeformationGraph &dg,
 	if (fmdata.option.distmax > distmax)
 		fmdata.option.distmax = distmax;
 
-	//	fmdata.PerformFastMarching(V, F, nodes); //do we need this to recompute from nodes?
+	//	fmdata.PerformFastMarching(V, F, dg.nodes); //do we need this to recompute from nodes?
 
 	distmax = 0;
 #ifdef AVARAGE_SEED_DISTANCE
@@ -98,12 +98,11 @@ int gen_DeformationGraph(DeformationGraph &dg,
 #if 1
 	for (int j = 0; j < nV; j++)
 		std::cout << dg.v_nodes[j].size() << "\n";
-
 #endif
-	return 0;
+	return distmax;
 
 }
-int gen_DeformationGraph(DeformationGraph &dg, FastMarchingData &fmdata, const Eigen::MatrixXd &V,
+double gen_DeformationGraph(DeformationGraph &dg, FastMarchingData &fmdata, const Eigen::MatrixXd &V,
 	const Eigen::MatrixXi &F, const int num = 100, const double radious_coef = 2.1,
 	const int node_nodes_num = 4, const int v_nodes_num = 6) 
 {
@@ -122,8 +121,17 @@ int gen_DeformationGraph(DeformationGraph &dg, FastMarchingData &fmdata, const E
 	dg.nodes = fmdata.seed_points;   // node vertices
 	return gen_DeformationGraph(dg,fmdata, V, F, radious_coef); // average_distance*radious_coef
 
-	return 0;
 
 }
 
+double gen_DeformationGraph(DeformationGraph &dg, const Eigen::MatrixXd &V,
+	const Eigen::MatrixXi &F, const int node_NUM = 100, const double radious_coef = 2.1,
+	const int node_nodes_num = 4, const int v_nodes_num = 6)
+{
+	FastMarchingData fmdata;
+	fmdata.option.iter_max = 1000;
+	fmdata.PrepareFastMarching(V, F);	
+	return gen_DeformationGraph(dg, fmdata, V, F, node_NUM, radious_coef, node_nodes_num, v_nodes_num);
+	
+}
 #endif
